@@ -1,74 +1,49 @@
-// components/ScanPanel.jsx
+// Step 3: Drag & Drop OCR Integration for ScanPanel
 
 import { useState } from 'react'
-import { callApi } from '../api'
 
-export function ScanPanel({ threadId }) {
-  const [image, setImage] = useState(null)
-  const [status, setStatus] = useState(null)
-  const [preview, setPreview] = useState(null)
+export default function ScanPanel() {
+  const [imagePreview, setImagePreview] = useState(null)
+  const [result, setResult] = useState(null)
+  const [uploading, setUploading] = useState(false)
 
-  const handleImage = async (file) => {
-    const form = new FormData()
-    form.append("file", file) // ✅ backend expects 'file'
-    setStatus("Scanning image...")
-    setPreview(URL.createObjectURL(file))
-
-    try {
-      const res = await callApi("/scan-card", {
-        method: "POST",
-        body: form,
-        isForm: true
-      })
-
-      if (!res.metadata?.name) {
-        setStatus("Could not extract text. Try again.")
-        return
-      }
-
-      setStatus("OCR complete. Passing to assistant...")
-
-      await callApi(`/assistant/thread/${threadId}/message`, {
-        method: "POST",
-        body: { message: `Scan result: ${res.metadata.name}` }
-      })
-
-      setStatus("Assistant processing scan + fetching price...")
-    } catch (err) {
-      console.error(err)
-      setStatus("Failed to scan. Try again.")
-    }
-  }
-
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault()
     const file = e.dataTransfer.files[0]
-    if (file) handleImage(file)
-  }
+    if (!file) return
 
-  const handleFile = (e) => {
-    const file = e.target.files[0]
-    if (file) handleImage(file)
+    setImagePreview(URL.createObjectURL(file))
+    const form = new FormData()
+    form.append('image', file)
+
+    setUploading(true)
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/ocr/image`, {
+      method: 'POST',
+      body: form
+    })
+
+    const data = await res.json()
+    setResult(data)
+    setUploading(false)
   }
 
   return (
-    <div className="flex flex-col gap-4 items-center">
-      <div
-        onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}
-        className="w-full h-64 border-2 border-dashed border-zinc-600 rounded flex items-center justify-center text-zinc-400"
-      >
-        Drop card image here or use file picker
-      </div>
+    <div
+      className="border border-dashed border-zinc-500 p-6 rounded-xl text-zinc-300 text-center"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={handleDrop}
+    >
+      <p className="mb-4">Drag and drop a card image to scan 🔍</p>
+      {imagePreview && <img src={imagePreview} alt="preview" className="mx-auto mb-4 max-h-60 rounded-lg" />}
+      {uploading && <p className="text-yellow-400">⏳ Scanning card...</p>}
+      {result && (
+        <div className="mt-4 text-left">
+          <p className="text-green-400">🧠 OCR Text:</p>
+          <pre className="text-sm text-zinc-100 whitespace-pre-wrap break-words">{result.text}</pre>
 
-      <input type="file" accept="image/*" onChange={handleFile} className="text-sm" />
-
-      {preview && (
-        <img src={preview} alt="Preview" className="w-48 rounded shadow" />
-      )}
-
-      {status && (
-        <div className="text-sm text-yellow-300 text-center">⚡ {status}</div>
+          <p className="text-cyan-400 mt-2">💾 Metadata:</p>
+          <pre className="text-sm text-zinc-100 whitespace-pre-wrap break-words">{JSON.stringify(result.metadata, null, 2)}</pre>
+        </div>
       )}
     </div>
   )

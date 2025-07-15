@@ -1,5 +1,5 @@
 // components/ChatPanel.jsx
-
+import { useDropzone } from 'react-dropzone'
 import { useState } from 'react'
 import { callApi } from '../api'
 
@@ -13,16 +13,31 @@ export function ChatPanel({ threadId, history, onReply, loading, scrollRef }) {
     const form = new FormData()
 form.append("message", input)
 
+const onDrop = async (acceptedFiles) => {
+  const file = acceptedFiles[0]
+  if (!file) return
+  const form = new FormData()
+  form.append("image", file)
+
+  const res = await callApi("/ocr/image", {
+    method: "POST",
+    body: form
+  })
+
+  const { text, metadata } = res
+  const summary = `[TOOL] OCR Detected: ${metadata.name || 'Unknown'} (${metadata.set || 'Set'} - ${metadata.rarity || 'Rarity'})`
+
+  setHistory((prev) => [...prev, { role: "assistant", content: summary }])
+}
+
+const { getRootProps, getInputProps } = useDropzone({ onDrop })
+
+
 await callApi(`/assistant/thread/${threadId}/message`, {
   method: "POST",
-  body: form
-})
-
-    setInput("")
-    await onReply()
-    setSending(false)
-  }
-
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ message: input })
+}) }
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto p-2 border border-zinc-800 rounded">
@@ -38,6 +53,10 @@ await callApi(`/assistant/thread/${threadId}/message`, {
         {loading && <div className="text-center text-zinc-400 text-sm">⏳ Updating memory...</div>}
         <div ref={scrollRef} />
       </div>
+<div {...getRootProps()} className="p-4 border border-dashed border-zinc-600 rounded text-center text-zinc-400 cursor-pointer hover:border-teal-400">
+  <input {...getInputProps()} />
+  📷 Drop card image here to scan (or click)
+</div>
 
       <div className="flex gap-2">
         <input

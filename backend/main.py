@@ -1,7 +1,7 @@
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.middleware.cors import CORSMiddleware
-from tiwhanawhana import app as core_app
+from fastapi import FastAPI, APIRouter, Depends, File, UploadFile
 from assistant_routes import router as assistant_router
+from fastapi import FastAPI, File, UploadFile, Form
+from fastapi.middleware.cors import CORSMiddleware
 from shared.supabase_client import supabase
 from shared.openai_client import get_card_metadata
 from shared.ocr import extract_text
@@ -15,6 +15,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(assistant_router, prefix="/assistant")
+@app.get("/logs")
+async def get_logs():
+    data = supabase.table("ocr_logs").select("*").order("created_at", desc=True).limit(50).execute()
+    return data.data
+
 @app.get("/")
 def root():
     return {"message": "Tiwhanawhana backend is online. AWAOOOO!"}

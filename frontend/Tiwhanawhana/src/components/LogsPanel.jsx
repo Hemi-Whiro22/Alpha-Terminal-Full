@@ -1,37 +1,45 @@
-// components/LogsPanel.jsx
+import { useEffect, useState } from "react"
 
-import { useEffect, useState } from 'react'
-import { callApi } from '../api'
-
-export function LogsPanel() {
+export default function LogsPanel() {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    callApi("/logs")
-      .then(res => setLogs(res.logs || []))
-      .finally(() => setLoading(false))
+    const fetchLogs = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/logs`)
+        const data = await res.json()
+        setLogs(data)
+      } catch (err) {
+        console.error("Failed to fetch logs:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLogs()
   }, [])
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">Recent OCR Logs</h2>
+    <div className="p-6 text-zinc-200">
+      <h2 className="text-2xl font-bold mb-4">🧠 OCR Memory Logs</h2>
+
       {loading ? (
-        <div className="text-zinc-400">Loading logs...</div>
+        <p>⏳ Loading...</p>
+      ) : logs.length === 0 ? (
+        <p>No scans yet. Drop a card image to get started!</p>
       ) : (
-        logs.length > 0 ? (
-          <div className="space-y-4">
-            {logs.map((log, i) => (
-              <div key={i} className="border border-zinc-700 rounded p-3 bg-zinc-900">
-                <div className="text-sm text-zinc-400">📁 {log.filename}</div>
-                <div className="text-sm text-yellow-300">📝 {log.text?.slice(0, 100)}...</div>
-                <pre className="text-xs text-zinc-500 mt-2">{JSON.stringify(log.metadata, null, 2)}</pre>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-zinc-400">No logs found.</div>
-        )
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+          {logs.map((log, i) => (
+            <div key={i} className="border border-zinc-700 p-4 rounded-xl bg-zinc-800">
+              <p className="text-sm text-zinc-400 mb-1">🕓 {new Date(log.created_at).toLocaleString()}</p>
+              <p className="text-green-300 whitespace-pre-wrap break-words mb-2">🧠 {log.text}</p>
+              <pre className="text-sm text-cyan-300 whitespace-pre-wrap break-words">
+                {JSON.stringify(log.metadata, null, 2)}
+              </pre>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )

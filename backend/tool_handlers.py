@@ -1,10 +1,27 @@
 # tool_handlers.py – Oracle Function Triggers 🧠
 
 import requests
-from shared.ocr import extract_text
+from shared.ocr import extract_text 
 from shared.openai_client import get_card_metadata
 from shared.supabase_client import supabase
 from datetime import datetime
+from fastapi import UploadFile, File, APIRouter
+import base64
+
+router = APIRouter()
+
+
+
+@router.post("/ocr/image")
+async def upload_image(image: UploadFile = File(...)):
+    contents = await image.read()
+    base64_str = base64.b64encode(contents).decode("utf-8")
+
+    from shared.ocr import process_card_image  # if not already imported
+    text, metadata = process_card_image(base64_str)
+
+    return {"text": text, "metadata": metadata}
+
 
 
 def scan_image(image_url: str):
@@ -42,3 +59,4 @@ def save_listing(card_name: str, rarity: str, image_url: str, price: float):
         "created_at": datetime.utcnow().isoformat()
     }).execute()
     return {"status": "listed", "card": card_name, "price": price}
+

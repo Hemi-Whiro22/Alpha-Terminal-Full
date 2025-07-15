@@ -5,6 +5,8 @@ import { ScanPanel } from './components/ScanPanel'
 import { ChatPanel } from './components/ChatPanel'
 import { ListingPanel } from './components/ListingPanel'
 import { callApi } from './api'
+import { LogsPanel } from './components/LogsPanel'
+
 
 export default function App() {
   const [panel, setPanel] = useState("scan")
@@ -56,12 +58,15 @@ export default function App() {
         <button onClick={() => setPanel("scan")}>Scan</button>
         <button onClick={() => setPanel("list")}>Listings</button>
         <button onClick={() => setPanel("chat")}>Chat</button>
+        <button onClick={() => setPanel("logs")}>View Logs</button>
       </nav>
 
       <main className="p-6 flex-1 overflow-y-auto">
         {panel === "scan" && <ScanPanel threadId={threadId} />}
         {panel === "list" && <ListingPanel threadId={threadId} />}
+        {panel === "logs" && <LogsPanel />}
         {panel === "chat" && <ChatPanel
+        
           threadId={threadId}
           history={history}
           loading={loading}

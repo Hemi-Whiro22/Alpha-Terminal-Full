@@ -24,4 +24,11 @@ dist-ssr
 *.sw?
 git rm --cached backend/.env
 echo "backend/.env" >> .gitignore
+git rm -r --cached backend/.venv
 .venv/
+node_modules/
+.env
+__pycache__/
+
+
+

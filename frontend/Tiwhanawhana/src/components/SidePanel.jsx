@@ -9,6 +9,15 @@ export default function SidePanel({ setPanel }) {
       >
         🧠 Chat
       </button>
+     <button
+  className={`w-full px-4 py-2 text-left hover:bg-zinc-800 ${
+    panel === "logs" ? "bg-zinc-800 text-white" : "text-zinc-400"
+  }`}
+  onClick={() => setPanel("logs")}
+>
+  🧠 Logs
+</button>
+
 
       <button
         onClick={() => setPanel("scan")}
